@@ -107,7 +107,6 @@ voxel_out_indices = (0, 1, 2)
 voxel_out_channel = 256
 voxel_channels = [64, 64*2, 64*4]
 
-torch_sparse_coor=True
 model = dict(
     type='ALOCC',
     use_depth_supervision=True,
@@ -151,7 +150,6 @@ model = dict(
         type='LSSViewTransformerFunction',
         grid_config=grid_config,
         input_size=data_config['input_size'],
-        torch_sparse_coor=torch_sparse_coor,
         downsample=16),
     frpn=None,
     backward_projection=dict(
@@ -390,6 +388,6 @@ custom_hooks = [
         temporal_start_iter=num_iters_per_epoch *2,
     ),
 ]
-# load_from = 'ckpts/pretrain/r50_256x705_depth_pretrain.pth'
+load_from = 'ckpts/pretrain/r50_256x705_depth_pretrain.pth'
 # fp16 = dict(loss_scale='dynamic')
 
