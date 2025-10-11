@@ -150,13 +150,13 @@ class ALOCC(CenterPoint):
                 causal_loss_weight=0.05,
                 causal_loss_bce_logits=False,
                 causal_loss_non_zero=False,
-                caulsal_loss_all_class=False,
+                causal_loss_all_class=False,
                 causal_loss_direct=False,
-                caulsal_loss_class_sample=False,
+                causal_loss_class_sample=False,
                 causal_loss_smooth=0.,
                 class_freq=None,
                 class_prob=None,
-                caulsal_loss_upsample=False,
+                causal_loss_upsample=False,
                 geometry_group=False,
                 learnable_pose=False,
                 normconv=False,
@@ -468,11 +468,11 @@ class ALOCC(CenterPoint):
         self.causal_loss_weight=causal_loss_weight
         self.causal_loss_bce_logits=causal_loss_bce_logits
         self.causal_loss_non_zero=causal_loss_non_zero
-        self.caulsal_loss_all_class=caulsal_loss_all_class
+        self.causal_loss_all_class=causal_loss_all_class
         self.causal_loss_direct=causal_loss_direct
-        self.caulsal_loss_class_sample=caulsal_loss_class_sample
+        self.causal_loss_class_sample=causal_loss_class_sample
         self.causal_loss_smooth=causal_loss_smooth
-        self.caulsal_loss_upsample=caulsal_loss_upsample
+        self.causal_loss_upsample=causal_loss_upsample
         
         self.learnable_pose=learnable_pose
         self.pose_weight=pose_weight
@@ -1358,7 +1358,7 @@ class ALOCC(CenterPoint):
                 ratio = gt_occupancy.shape[0] // results['bev_feat_before_encoder'][i].shape[1]
                 H,W,D=results['bev_feat_before_encoder'][i].shape[1:]
                 if ratio != 1:
-                    if not self.caulsal_loss_upsample:
+                    if not self.causal_loss_upsample:
                         
                         gt_occupancy = gt_occupancy.reshape(H, ratio, W, ratio, D, ratio).permute(0,2,4,1,3,5).reshape( H, W, D, ratio**3)
                         gt_occupancy = gt_occupancy.reshape(H, ratio, W, ratio, D, ratio).permute(0,2,4,1,3,5).reshape(-1,)
@@ -1375,7 +1375,7 @@ class ALOCC(CenterPoint):
                 labels=labels[:-1]
 
                 occ_feat=results['bev_feat_before_encoder'][i]
-                if self.caulsal_loss_upsample:
+                if self.causal_loss_upsample:
                     
                     if ratio != 1:
                         occ_feat=F.interpolate(occ_feat[None,...],scale_factor=ratio,mode='trilinear',align_corners=True,)[0]
@@ -1388,15 +1388,15 @@ class ALOCC(CenterPoint):
                 # occs=[]
                 causal_loss_i=0
                 
-                caulsal_loss_class_num=1
-                if self.caulsal_loss_all_class:
-                    caulsal_loss_class_num=len(labels)
-                for c in range(caulsal_loss_class_num):
-                    caulsal_loss_weight_single=1.
-                    if self.caulsal_loss_all_class:
+                causal_loss_class_num=1
+                if self.causal_loss_all_class:
+                    causal_loss_class_num=len(labels)
+                for c in range(causal_loss_class_num):
+                    causal_loss_weight_single=1.
+                    if self.causal_loss_all_class:
                         label_choice=labels[c]  
                     else:
-                        if self.caulsal_loss_class_sample:
+                        if self.causal_loss_class_sample:
                             if self.class_prob is not None:
                                 sampled_idx=torch.multinomial(self.class_prob.to(labels.device)[labels.long()],num_samples=1)
                             else:
@@ -1428,7 +1428,7 @@ class ALOCC(CenterPoint):
                         causal_loss_non_zero_mask=causal_grad_map!=0
                         if causal_loss_non_zero_mask.sum()==0:
                             causal_grad_map=causal_grad_map*0.
-                            caulsal_loss_weight_single=0.
+                            causal_loss_weight_single=0.
                         else:
                             causal_grad_map=causal_grad_map[causal_loss_non_zero_mask]
                             seg_label=seg_label[causal_loss_non_zero_mask]
@@ -1436,7 +1436,7 @@ class ALOCC(CenterPoint):
                     seg_label=(seg_label==label_choice).float()
                     
                     if self.causal_loss_bce_logits:
-                        causal_loss_ic=F.binary_cross_entropy_with_logits(causal_grad_map/self.causal_loss_temp,seg_label)*caulsal_loss_weight_single
+                        causal_loss_ic=F.binary_cross_entropy_with_logits(causal_grad_map/self.causal_loss_temp,seg_label)*causal_loss_weight_single
                     elif self.causal_loss_direct:
                         
                         positive=seg_label==1
@@ -1453,15 +1453,15 @@ class ALOCC(CenterPoint):
                             causal_loss_ic+=(causal_grad_map[negtive][causal_loss_negtive_mask]).pow(2).mean()
                         else:
                             causal_loss_ic+=(causal_grad_map).pow(2).mean()*0.
-                        causal_loss_ic=causal_loss_ic*caulsal_loss_weight_single
+                        causal_loss_ic=causal_loss_ic*causal_loss_weight_single
                     else:
                         
-                        causal_loss_ic=F.binary_cross_entropy(causal_grad_map/self.causal_loss_temp,seg_label)*caulsal_loss_weight_single
+                        causal_loss_ic=F.binary_cross_entropy(causal_grad_map/self.causal_loss_temp,seg_label)*causal_loss_weight_single
                 
                     if torch.isnan(causal_loss_ic):
                         causal_loss_ic=torch.zeros_like(causal_loss_ic)
                     causal_loss_i+=causal_loss_ic
-                if self.caulsal_loss_all_class:
+                if self.causal_loss_all_class:
                     causal_loss_i=causal_loss_i/len(labels)
                 causal_loss=causal_loss+causal_loss_i
             causal_loss=causal_loss/len(kwargs['gt_occupancy']) *self.causal_loss_weight

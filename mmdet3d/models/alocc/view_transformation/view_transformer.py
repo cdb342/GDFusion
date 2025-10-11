@@ -49,7 +49,6 @@ class LSSViewTransformerFunction(BaseModule):
         accelerate=False,
         uniform=False,
         with_cp=False,
-        ################
         num_classes=19,
         soft_filling=False,
         collapse_z=False,
@@ -82,7 +81,6 @@ class LSSViewTransformerFunction(BaseModule):
         self.out_channels = out_channels
         self.accelerate = accelerate
         self.initial_flag = True
-        ###########
         self.num_classes=num_classes
         self.soft_filling=soft_filling
         self.grid_map=self.gen_grid_map(grid_size=self.grid_size)

@@ -1,37 +1,29 @@
 # ===> per class IoU of 6019 samples:
-# ===> others - IoU = 14.3536
-# ===> barrier - IoU = 47.7095
-# ===> bicycle - IoU = 28.3775
-# ===> bus - IoU = 47.8951
-# ===> car - IoU = 52.624
-# ===> construction_vehicle - IoU = 26.5321
-# ===> motorcycle - IoU = 31.0023
-# ===> pedestrian - IoU = 30.2299
-# ===> traffic_cone - IoU = 31.2335
-# ===> trailer - IoU = 34.5154
-# ===> truck - IoU = 39.7166
-# ===> driveable_surface - IoU = 82.9196
-# ===> other_flat - IoU = 47.035
-# ===> sidewalk - IoU = 54.6047
-# ===> terrain - IoU = 58.3845
-# ===> manmade - IoU = 46.9806
-# ===> vegetation - IoU = 42.0966
-# ===> free - IoU = 91.3781
-# ===> mIoU of 6019 samples: 42.13
-# ===> occupied - IoU = 73.3183
-# ===> mIoU_D = 36.3616
-# Copyright (c) 2022-2023, NVIDIA Corporation & Affiliates. All rights reserved. 
-# 
-# This work is made available under the Nvidia Source Code License-NC. 
-# To view a copy of this license, visit 
-# https://github.com/NVlabs/FB-BEV/blob/main/LICENSE
-
-
+# ===> barrier - IoU = 24.3204
+# ===> bicycle - IoU = 18.7775
+# ===> bus - IoU = 29.7753
+# ===> car - IoU = 34.3195
+# ===> construction_vehicle - IoU = 17.8957
+# ===> motorcycle - IoU = 19.612
+# ===> pedestrian - IoU = 17.4848
+# ===> traffic_cone - IoU = 17.1732
+# ===> trailer - IoU = 15.5468
+# ===> truck - IoU = 26.5237
+# ===> driveable_surface - IoU = 47.6176
+# ===> other_flat - IoU = 29.8659
+# ===> sidewalk - IoU = 31.2269
+# ===> terrain - IoU = 29.1976
+# ===> manmade - IoU = 20.0404
+# ===> vegetation - IoU = 29.0474
+# ===> free - IoU = 94.2839
+# ===> mIoU of 6019 samples: 25.53
+# ===> mIoU_D = 22.4919
+# ===> occupied - IoU = 38.1665
 # we follow the online training settings  from solofusion
 num_gpus = 8
-samples_per_gpu = 4
+samples_per_gpu = 2
 num_iters_per_epoch = int(28130 // (num_gpus * samples_per_gpu) * 4.554)
-num_epochs = 20
+num_epochs = 12
 checkpoint_epoch_interval = 1
 use_custom_eval_hook=True
 
@@ -48,12 +40,6 @@ test_sequences_split_num = 1
 # no GT object in the current sample. This does not make sense when doing
 # sequential sampling of frames, so we disable it.
 filter_empty_gt = False
-
-# Long-Term Fusion Parameters
-history_cat_conv_out_channels = 160
-
-
-# Copyright (c) Phigent Robotics. All rights reserved.
 
 _base_ = ['../_base_/datasets/nus-3d.py', '../_base_/default_runtime.py']
 # Global
@@ -73,7 +59,7 @@ data_config = {
     ],
     'Ncams':
     6,
-    'input_size': (256, 704),
+    'input_size': (896, 1600),
     'src_size': (900, 1600),
 
     # Augmentation
@@ -85,55 +71,55 @@ data_config = {
 }
 
 bda_aug_conf = dict(
-    rot_lim=(-22.5, 22.5),
+    rot_lim=(-0, 0),
     scale_lim=(1., 1.),
     flip_dx_ratio=0.5,
     flip_dy_ratio=0.5)
 
-use_checkpoint = True
+use_checkpoint = False
 sync_bn = True
 
 
 # Model
 grid_config = {
-    'x': [-40, 40, 0.8],
-    'y': [-40, 40, 0.8],
-    'z': [-1, 5.4, 0.8],
-    'depth': [2.0, 42.0, 0.5],
-}      
-depth_categories = 80 #(grid_config['depth'][1]-grid_config['depth'][0])//grid_config['depth'][2]
+    'x': [-50, 50, 0.5],
+    'y': [-50, 50, 0.5],
+    'z': [-5, 3.0, 0.5],
+    'depth': [1.0, 60.0, 0.5],
+}
+depth_channels = int((grid_config['depth'][1]-grid_config['depth'][0])//grid_config['depth'][2])
+occ_size= (200, 200, 16)  
 
-## config for bevformer
-grid_config_bevformer={
-        'x': [-40, 40, 0.8],
-        'y': [-40, 40, 0.8],
-        'z': [-1, 5.4, 1.6],
-       }
-bev_h_ = 100
-bev_w_ = 100
-numC_Trans=80
+numC_Trans=32
 _dim_ = 256
-_pos_dim_ = 40
-_ffn_dim_ = numC_Trans * 4
-_num_levels_= 1
 
 empty_idx = 18  # noise 0-->255
 num_cls = 19  # 0 others, 1-16 obj, 17 free
 fix_void = num_cls == 19
-img_norm_cfg = None
 
-occ_size = [200, 200, 16]
-voxel_out_indices = (0, 1, 2)
-voxel_out_channel = 256
-voxel_channels = [64, 64*2, 64*4]
+voxel_out_channel = 48
+occ_encoder_channels = [numC_Trans,numC_Trans*2,numC_Trans*4,numC_Trans*8]
 
 not_use_history=False
 use_sequence_group_flag=not not_use_history
-
-multi_adj_frame_id_cfg = (1, 1, 1)
 vox_his_recurrence=True
 vox_his_time_emb_long=True
 vox_his_time_emb_fixed=True
+
+depth_stereo=True
+multi_adj_frame_id_cfg = (1, 1, 1)
+load_point_semantic=True
+img_seg_weight=0.1
+sem_sup_prototype=True
+depth2occ_intra=True
+length=22
+depth2occ_inter=True
+soft_filling=True
+use_depth_supervision=True
+geometry_denoise=True
+depth_loss_ce=True
+wo_assign=True
+use_mask_net2=True
 
 #scene-level his fusion
 scene_his_fusion=True
@@ -155,16 +141,23 @@ motion_his_fusion=True
 motion_his_base_lr=0.1
 motion_dim=3
 
+use_camera_visible_mask=True
+gts_surroundocc=True
+cal_metric_in_model=True
 model = dict(
     type='ALOCC',
-    use_depth_supervision=True,
+    use_depth_supervision=use_depth_supervision,
     fix_void=fix_void,
     single_bev_num_channels=numC_Trans,
-    readd=True,
-
+    not_use_history=not_use_history,
+    depth_stereo=depth_stereo,
     grid_config=grid_config,
     downsample=16,
-
+    img_seg_weight=img_seg_weight,
+    depth_loss_ce=depth_loss_ce,
+    depth2occ_intra=depth2occ_intra,
+    sem_sup_prototype=sem_sup_prototype,
+    use_mask_net2=use_mask_net2,
     vox_his_recurrence=vox_his_recurrence,
     vox_his_time_emb_long=vox_his_time_emb_long,
     vox_his_time_emb_fixed=vox_his_time_emb_fixed,
@@ -181,13 +174,17 @@ model = dict(
     motion_his_fusion=motion_his_fusion,
     motion_his_base_lr=motion_his_base_lr,
     motion_dim=motion_dim,
+
+    gts_surroundocc=gts_surroundocc,
+    cal_metric_in_model=cal_metric_in_model,
+
     img_backbone=dict(
         # pretrained='torchvision://resnet50',
         # pretrained='ckpts/resnet50-0676ba61.pth',
         type='ResNet',
         depth=50,
         num_stages=4,
-        out_indices=(2, 3),
+        out_indices=(0,2, 3),
         frozen_stages=-1,
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=False,
@@ -202,17 +199,25 @@ model = dict(
         with_cp=use_checkpoint,
         out_ids=[0]),
     depth_net=dict(
-        type='CM_DepthNet', # camera-aware depth net
+        type='CM_DepthNet', 
         in_channels=_dim_,
         context_channels=numC_Trans,
         downsample=16,
         grid_config=grid_config,
-        depth_channels=depth_categories,
+        depth_channels=depth_channels,
         with_cp=use_checkpoint,
         loss_depth_weight=1.,
         use_dcn=False,
-
+        stereo=depth_stereo,
         input_size=data_config['input_size'],
+        bias=5.,
+        mid_channels=_dim_,
+        aspp_mid_channels=96,
+        depth2occ_intra=depth2occ_intra,
+        length=length,
+        depth2occ_inter=depth2occ_inter,
+        
+        geometry_denoise=geometry_denoise,
         geometry_his_fusion=geometry_his_fusion,
         depth_conv_head_split=depth_conv_head_split,
         per_pixel_weight=per_pixel_weight,
@@ -223,102 +228,78 @@ model = dict(
         type='LSSViewTransformerFunction',
         grid_config=grid_config,
         input_size=data_config['input_size'],
+        soft_filling=soft_filling,
+        depth2occ_inter=depth2occ_inter,
         downsample=16),
-    frpn=None,
-    backward_projection=dict(
-        type='BackwardProjection',
-        bev_h=bev_h_,
-        bev_w=bev_w_,
-        in_channels=numC_Trans,
-        out_channels=numC_Trans,
-        pc_range=point_cloud_range,
-        transformer=dict(
-            type='BEVFormer',
-            use_cams_embeds=False,
-            embed_dims=numC_Trans,
-            encoder=dict(
-                type='bevformer_encoder',
-                num_layers=1,
-                pc_range=point_cloud_range,
-                grid_config=grid_config_bevformer,
-                data_config=data_config,
-                return_intermediate=False,
-                transformerlayers=dict(
-                    type='BEVFormerEncoderLayer',
-                    attn_cfgs=[
-                        dict(
-                            type='MultiScaleDeformableAttention',
-                            embed_dims=numC_Trans,
-                            dropout=0.0,
-                            num_levels=1),
-                        dict(
-                            type='DA_SpatialCrossAttention',
-                            pc_range=point_cloud_range,
-                            dbound=[2.0, 42.0, 0.5],
-                            dropout=0.0,
-                            deformable_attention=dict(
-                                type='DA_MSDeformableAttention',
-                                embed_dims=numC_Trans,
-                                num_points=8,
-                                num_levels=_num_levels_),
-                            embed_dims=numC_Trans,
-                        )
-                    ],
-                    ffn_cfgs=dict(
-                        type='FFN',
-                        embed_dims=numC_Trans,
-                        feedforward_channels=_ffn_dim_,
-                        ffn_drop=0.0,
-                        act_cfg=dict(type='ReLU', inplace=True),),
-                    feedforward_channels=_ffn_dim_,
-                    ffn_dropout=0.0,
-                    operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
-                                     'ffn', 'norm'))),
-                    # operation_order=('cross_attn', 'norm', 'ffn', 'norm'))),
-                    # operation_order=('cross_attn', 'norm'))),
-           ),
-        positional_encoding=dict(
-            type='CustormLearnedPositionalEncoding',
-            num_feats=_pos_dim_,
-            row_num_embed=bev_h_,
-            col_num_embed=bev_w_,
-            ),
-    ),
+    pre_process=dict(
+        type='CustomResNet3D',
+        numC_input=numC_Trans,
+        with_cp=use_checkpoint,
+        num_layer=[1,],
+        num_channels=[numC_Trans,],
+        stride=[1,],
+        backbone_output_ids=[0,]),
     img_bev_encoder_backbone=dict(
-        type='CustomResNet3D_FBBEV',
-        depth=18,
+        type='CustomResNet3D',
+        numC_input=numC_Trans *1,
+        num_layer=[1, 2, 4,4],
         with_cp=use_checkpoint,
-        block_strides=[1, 2, 2],
-        n_input_channels=numC_Trans,
-        block_inplanes=voxel_channels,
-        out_indices=voxel_out_indices,
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
-    ),
-    img_bev_encoder_neck=dict(
-        type='FPN3D',
-        with_cp=use_checkpoint,
-        in_channels=voxel_channels,
+        num_channels=occ_encoder_channels,
+        stride=[1,2,2,2],
+        backbone_output_ids=[0,1,2,3]),
+    img_bev_encoder_neck=dict(type='LSSFPN3D2',
+        in_channels=numC_Trans*15,
+        out_channels=voxel_out_channel),
+    
+    alocc_head=dict(
+        type='ALOccHead',
+        feat_channels=voxel_out_channel,
         out_channels=voxel_out_channel,
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
-    ),
-    occupancy_head= dict(
-        type='OccHead',
-        with_cp=use_checkpoint,
-        use_focal_loss=True,
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
-        soft_weights=True,
-        final_occ_size=occ_size,
-        empty_idx=empty_idx,
-        num_level=len(voxel_out_indices),
-        in_channels=[voxel_out_channel] * len(voxel_out_indices),
-        out_channel=num_cls,
-        point_cloud_range=point_cloud_range,
-        loss_weight_cfg=dict(
-            loss_voxel_ce_weight=1.0,
-            loss_voxel_sem_scal_weight=1.0,
-            loss_voxel_geo_scal_weight=1.0,
-            loss_voxel_lovasz_weight=1.0,
-        ),
+        num_queries=num_cls,
+        num_occupancy_classes=num_cls,
+        sample_weight_gamma=0.25,
+        num_transformer_feat_level=0,
+        # using the original transformer decoder
+        #########
+        wo_assign=wo_assign,
+        mask_embed2=use_mask_net2,
+        out_channels_embed2=numC_Trans,
+        num_points_img=1056,
+        ############
+        transformer_decoder=dict(
+            type='DetrTransformerDecoder',
+            return_intermediate=True,
+            num_layers=0,
+            transformerlayers=None,
+            init_cfg=None),
+            # loss settings
+            loss_cls=dict(
+                type='CrossEntropyLoss',
+                use_sigmoid=False,
+                loss_weight=2.0,
+                reduction='mean',
+                class_weight=[1.0] * (num_cls )+ [0.1]),
+            loss_mask=dict(
+                type='CrossEntropyLoss',
+                use_sigmoid=True,
+                reduction='mean',
+                loss_weight=5.0),
+            loss_dice=dict(
+                type='DiceLoss',
+                use_sigmoid=True,
+                activate=True,
+                reduction='mean',
+                naive_dice=True,
+                eps=1.0,
+                loss_weight=5.0),
+        
+            train_cfg=dict(
+                num_points=12544 * 2,
+                oversample_ratio=3.0,
+                importance_sample_ratio=0.75,
+                assigner=None,
+                sampler=None,
+            ),
     ),
     pts_bbox_head=None)
 
@@ -334,7 +315,9 @@ train_pipeline = [
         type='PrepareImageInputs',
         is_train=True,
         data_config=data_config,
-        geometry_his_fusion=geometry_his_fusion),
+        sequential=True,
+        geometry_his_fusion=geometry_his_fusion,
+        gts_surroundocc=gts_surroundocc),
     dict(
         type='LoadAnnotationsBEVDepth',
         bda_aug_conf=bda_aug_conf,
@@ -344,13 +327,13 @@ train_pipeline = [
         coord_type='LIDAR',
         load_dim=5,
         use_dim=5,
+        point_with_semantic=load_point_semantic,
         file_client_args=file_client_args),
-    dict(type='PointToMultiViewDepth', downsample=1, grid_config=grid_config),
-    dict(type='LoadOccupancy', ignore_nonvisible=True, fix_void=fix_void, occupancy_path=occupancy_path),
+    dict(type='PointToMultiViewDepth', downsample=1, grid_config=grid_config,load_semantic_map=load_point_semantic,fix_void=fix_void),
+    dict(type='LoadOccupancy', ignore_nonvisible=use_camera_visible_mask, fix_void=fix_void, occupancy_path=occupancy_path,gts_surroundocc=gts_surroundocc),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
     dict(
-        type='Collect3D', keys=['img_inputs',   'gt_occupancy', 'gt_depth','aux_cam_params','adj_aux_cam_params'
-                               ])
+        type='Collect3D', keys=['img_inputs', 'gt_occupancy', 'gt_depth','aux_cam_params','adj_aux_cam_params','gt_semantic_map'])
 ]
 
 test_pipeline = [
@@ -358,7 +341,7 @@ test_pipeline = [
         type='CustomDistMultiScaleFlipAug3D',
         tta=False,
         transforms=[
-            dict(type='PrepareImageInputs', data_config=data_config,geometry_his_fusion=geometry_his_fusion),
+            dict(type='PrepareImageInputs', data_config=data_config, sequential=True,geometry_his_fusion=geometry_his_fusion,gts_surroundocc=gts_surroundocc),
             dict(
                 type='LoadAnnotationsBEVDepth',
                 bda_aug_conf=bda_aug_conf,
@@ -370,12 +353,12 @@ test_pipeline = [
                 load_dim=5,
                 use_dim=5,
                 file_client_args=file_client_args),
-            dict(type='LoadOccupancy',  occupancy_path=occupancy_path),
+            dict(type='LoadOccupancy', ignore_nonvisible=use_camera_visible_mask, fix_void=fix_void, occupancy_path=occupancy_path,gts_surroundocc=gts_surroundocc),
             dict(
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
                 with_label=False),
-            dict(type='Collect3D', keys=['points', 'img_inputs',  'gt_occupancy', 'visible_mask','aux_cam_params','adj_aux_cam_params'])
+            dict(type='Collect3D', keys=['points', 'img_inputs',  'aux_cam_params','adj_aux_cam_params', 'gt_occupancy'])
             ]
         )
 ]
@@ -393,19 +376,22 @@ share_data_config = dict(
     modality=input_modality,
     img_info_prototype='bevdet4d',
     occupancy_path=occupancy_path,
-    use_sequence_group_flag=True,
+    use_sequence_group_flag=use_sequence_group_flag,
+    stereo=depth_stereo,
     multi_adj_frame_id_cfg=multi_adj_frame_id_cfg,
-    stereo=True,
 )
 
 test_data_config = dict(
     pipeline=test_pipeline,
     sequences_split_num=test_sequences_split_num,
-    ann_file=data_root + 'bevdetv2-nuscenes_infos_val.pkl')
+    ann_file=data_root + 'bevdetv2-nuscenes_infos_val.pkl',
+    occ_size=occ_size,
+    gts_surroundocc=gts_surroundocc,
+    cal_metric_in_model=cal_metric_in_model,)
 
 data = dict(
     samples_per_gpu=samples_per_gpu,
-    workers_per_gpu=6,
+    workers_per_gpu=4,
     test_dataloader=dict(runner_type='IterBasedRunnerEval'),
     train=dict(
         type=dataset_type,
@@ -418,12 +404,10 @@ data = dict(
         modality=input_modality,
         img_info_prototype='bevdet4d',
         sequences_split_num=train_sequences_split_num,
-        use_sequence_group_flag=True,
+        use_sequence_group_flag=use_sequence_group_flag,
         filter_empty_gt=filter_empty_gt,
+        stereo=depth_stereo,
         multi_adj_frame_id_cfg=multi_adj_frame_id_cfg,
-        stereo=True,
-        # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
-        # and box_type_3d='Depth' in sunrgbd and scannet dataset.
         box_type_3d='LiDAR'),
     val=test_data_config,
     test=test_data_config)
@@ -434,7 +418,6 @@ for key in ['val', 'test']:
 # Optimizer
 lr = 2e-4
 optimizer = dict(type='AdamW', lr=lr, weight_decay=1e-2)
- 
 optimizer_config = dict(grad_clip=dict(max_norm=5, norm_type=2))
 lr_config = dict(
     policy='step',
@@ -446,7 +429,7 @@ runner = dict(type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch
 checkpoint_config = dict(
     interval=checkpoint_epoch_interval * num_iters_per_epoch)
 evaluation = dict(
-    interval=20 * num_iters_per_epoch, pipeline=test_pipeline)
+    interval=num_epochs * num_iters_per_epoch, pipeline=test_pipeline)
 
 
 log_config = dict(
@@ -459,13 +442,19 @@ custom_hooks = [
         type='MEGVIIEMAHook',
         init_updates=10560,
         priority='NORMAL',
-        interval=2*num_iters_per_epoch,
+        interval=1*num_iters_per_epoch,
     ),
     dict(
         type='SequentialControlHook',
         temporal_start_iter=0 *2,
     ),
+    
+    dict(
+        type='FusionRateControlDepthHook',
+        temporal_start_iter=0,
+        temporal_end_iter=num_iters_per_epoch *6,
+    ),
 ]
-load_from = 'ckpts/pretrain/r50_256x705_depth_pretrain.pth'
-# fp16 = dict(loss_scale='dynamic')
 
+
+load_from='ckpts/pretrain/bevdet-r50-4d-stereo-cbgs.pth'

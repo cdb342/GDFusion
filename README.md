@@ -1,21 +1,19 @@
 
-<p align="center">
-  <!-- You can create and add a logo/banner here for OccVerse -->
-  <!-- <img src="path/to/your/banner.png" width="80%"> -->
-  <h1 align="center">OccVerse: A Unified Framework for 3D Occupancy Prediction</h1>
+<p align="center" style="margin: 0;">
+  <img src="asset/logo.png" width="40%" style="margin: -50;">
 </p>
 
 <p align="center">
     <a href="https://opensource.org/licenses/Apache-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
     <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/Python-3.8+-orange.svg"></a>
     <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.0.1-red.svg"></a>
-    <a href="https://github.com/cdb342/OccVerse/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+    <a href="https://github.com/cdb342/OccStudio/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
 </p>
 
 
-Welcome to **OccVerse**, a framework for 3D Occupancy Prediction. This project unifies our previous works, including **ALOcc**, **CausalOcc**, and **GDFusion**, into a single codebase to support research in autonomous driving perception. The framework is designed to handle both **Semantic Occupancy** and **Occupancy Flow** prediction.
+Welcome to **OccStudio**, a unified framework for 3D Occupancy Prediction. This project unifies our previous works, including **ALOcc**, **CausalOcc**, and **GDFusion**, into a single codebase to support research in autonomous driving perception. The framework is designed to handle both **Semantic Occupancy** and **Occupancy Flow** prediction.
 
-Our goal is to provide a flexible and unified tool to accelerate academic research and industry applications. We hope OccVerse can serve as a solid foundation for the community to build upon.
+Our goal is to provide a flexible and unified tool to accelerate academic research and industry applications. We hope OccStudio can serve as a solid foundation for the community to build upon.
 
 
 ---
@@ -23,14 +21,14 @@ Our goal is to provide a flexible and unified tool to accelerate academic resear
 ## 🌟 Highlights
 
 - 🏆 **A Unified Framework**: Provides a common codebase for our works (**ALOcc**, **CausalOcc**, **GDFusion**) and other models like `BEVDetOcc`, `FB-Occ`, etc.
-- 🔧 **Configurable Feature Representation**: Supports multiple type of 3D feature encoding (like Volume-based and BEV-based), switchable via configuration.
+- 🔧 **Flexible and Configurable Architecture**: Supports multiple input modalities (e.g., **images**, **depth**), various types of 3D feature encoding (e.g. **Volume-based**, **BEV-based**), and different temporal fusion methods (e.g., **SoloFusion**, **GDFusion**), all of which are switchable via configuration.
 - 📚 **Dataset Support**: Provides full support for large-scale datasets like **nuScenes** and **Waymo**, and allows for seamlessly switching between different occupancy annotation formats (e.g., **Occ3D**, **SurroundOcc**, **OpenOccupancy**) for robust experimentation.
 
 ---
 
 ## 🛠 Model Zoo
 
-OccVerse supports the following state-of-the-art models:
+OccStudio supports the following state-of-the-art models:
 
 | Method        | Task                      | Publication |
 |---------------|---------------------------|-------------|
@@ -51,13 +49,13 @@ OccVerse supports the following state-of-the-art models:
 We recommend using Conda for environment management.
 
 ```bash
-# Clone this repository (replace OccVerse with your actual repo name)
-git clone https://github.com/cdb342/OccVerse
-cd OccVerse
+# Clone this repository (replace OccStudio with your actual repo name)
+git clone https://github.com/cdb342/OccStudio
+cd OccStudio
 
 # Create and activate the conda environment
-conda create -n occverse python=3.8 -y
-conda activate occverse
+conda create -n OccStudio python=3.8 -y
+conda activate OccStudio
 
 # Install PyTorch dependencies (for CUDA 11.8)
 pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 -f https://download.pytorch.org/whl/torch_stable.html
@@ -72,7 +70,7 @@ cd ..
 # Install MMDetection and MMSegmentation
 pip install mmdet==2.28.2 mmsegmentation==0.30.0
 
-# Install the OccVerse framework itself
+# Install the OccStudio framework itself
 pip install -v -e .
 
 # Install other dependencies
@@ -148,18 +146,18 @@ bash tools/dist_train.sh configs/alocc/alocc_3d_256x704_bevdet_preatrain.py work
 Download our pre-trained models from [Hugging Face](https://huggingface.co/Dobbin/alocc) and run the testing script.
 
 ```bash
-# Evaluation with mIoU
+# Evaluate semantic occupancy (mIoU) or occupancy flow
 # Syntax: bash tools/dist_test.sh [CONFIG_FILE] [CHECKPOINT_PATH] [NUM_GPUS]
 # Example: Evaluate the ALOcc-3D model
 bash tools/dist_test.sh configs/alocc/alocc_3d_256x704_bevdet_preatrain.py ckpts/alocc_3d_256x704_bevdet_preatrain.pth 8
 
-# Evaluation with RayIoU
+# Evaluate semantic occupancy (RayIoU)
 # Syntax: bash tools/dist_test_ray.sh [CONFIG_FILE] [CHECKPOINT_PATH] [NUM_GPUS]
 # Example: Evaluate the ALOcc-3D model
 bash tools/dist_test.sh configs/alocc/alocc_3d_256x704_bevdet_preatrain_wo_mask.py ckpts/alocc_3d_256x704_bevdet_preatrain_wo_mask.pth 8
 ```
 
-> **Note:** Due to an unresolved bug in the sampler, please use **1 or 8 GPUs** for inference to ensure accurate metric calculation. Using a different number of GPUs may lead to duplicate sample counting.
+> **Note:** When performing inference with temporal fusion, please use **1 or 8 GPUs**. A sampler bug may cause duplicate sample counting with other GPU configurations.
 
 ### Benchmarking
 
@@ -181,7 +179,7 @@ python tools/analysis_tools/get_flops.py configs/alocc/alocc_3d_256x704_bevdet_p
 
 ## 📊 Main Results
 
-Here are the performance benchmarks of models implemented in **OccVerse**. The results below are for the `ALOcc` series.
+Here are the performance benchmarks of models implemented in **OccStudio**. The results below are for the `ALOcc` series.
 
 #### Performance on Occ3D-nuScenes (trained with camera visible mask)
 | Model           | Backbone  | Input Size | mIoU<sub>D</sub><sup>m</sup> | mIoU<sup>m</sup> | FPS  |
@@ -208,7 +206,7 @@ Here are the performance benchmarks of models implemented in **OccVerse**. The r
 
 ## 🤝 Contribution
 
-We welcome contributions from the community! If you find a bug, have a feature request, or want to contribute new models to OccVerse, please feel free to open an issue or submit a pull request.
+We welcome contributions from the community! If you find a bug, have a feature request, or want to contribute new models to OccStudio, please feel free to open an issue or submit a pull request.
 
 ---
 
@@ -226,7 +224,7 @@ We gratefully acknowledge the foundational work of many excellent open-source pr
 
 ## 📜 Citation
 
-If you find OccVerse useful in your research, please consider citing our relevant papers:
+If you find OccStudio useful in your research, please consider citing our relevant papers:
 
 ```bibtex
 @InProceedings{chen2025rethinking,

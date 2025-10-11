@@ -8,14 +8,6 @@ from .loading import (LoadAnnotations3D, LoadAnnotationsBEVDepth,
                       LoadPointsFromMultiSweeps, NormalizePointsColor,
                       PointSegClassMapping, PointToMultiViewDepth,
                       PrepareImageInputs,LoadVqGT,LoadOccFlowGTFromFile)
-####################
-# from .loading_bevdet import (LoadAnnotations3D_BEVDet, LoadAnnotationsBEVDepth_BEVDet,
-#                       LoadImageFromFileMono3D_BEVDet, LoadMultiViewImageFromFiles_BEVDet,
-#                       LoadPointsFromDict_BEVDet, LoadPointsFromFile_BEVDet,
-#                       LoadPointsFromMultiSweeps_BEVDet, NormalizePointsColor_BEVDet,
-#                       PointSegClassMapping_BEVDet, PointToMultiViewDepth_BEVDet,
-#                       PrepareImageInputs_BEVDet, LoadOccGTFromFile,PointToMultiViewDepth_occ)
-# ####################
 from .test_time_aug import MultiScaleFlipAug3D
 # yapf: disable
 from .transforms_3d import (AffineResize, BackgroundPointsFilter,
@@ -52,15 +44,6 @@ __all__ = [
     'LoadPointsFromDict', 'MultiViewWrapper', 'RandomRotate',
     'RangeLimitedRandomCrop', 'PrepareImageInputs',
     'LoadAnnotationsBEVDepth', 'PointToMultiViewDepth','LoadVqGT',
-
-    # ######################
-    # 'LoadAnnotations3D_BEVDet', 'LoadAnnotationsBEVDepth_BEVDet',
-    #                   'LoadImageFromFileMono3D_BEVDet', 'LoadMultiViewImageFromFiles_BEVDet',
-    #                   'LoadPointsFromDict_BEVDet', 'LoadPointsFromFile_BEVDet',
-    #                   'LoadPointsFromMultiSweeps_BEVDet', 'NormalizePointsColor_BEVDet',
-    #                   'PointSegClassMapping_BEVDet', 'PointToMultiViewDepth_BEVDet',
-    #                   'PrepareImageInputs_BEVDet', 'LoadOccGTFromFile','PointToMultiViewDepth_occ'
-    # ######################
     'LoadMultiViewImageFromFiles_SemanticKitti','LoadSemKittiAnnotation','CreateDepthFromLiDAR',
     'OccDefaultFormatBundle3D','LoadOccFlowGTFromFile'
     ###################
