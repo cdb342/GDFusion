@@ -9,3 +9,4 @@ test
 mmcv
 mmdet3d.egg-info
 map_dict.py
+hug_load.py
