@@ -263,7 +263,6 @@ class CM_DepthNet(BaseModule):
                 length=44,
                 train_depth_only=False,
                 num_cls=17,
-                soft_filling_with_offset=False,
                 cam_channels=27,
                 occlude_tau=1.0,
                 depth2occ_inter=False,
@@ -285,7 +284,6 @@ class CM_DepthNet(BaseModule):
                 ####################
                 depth_gt=False,
                 depth_sigmoid=False,
-                geometry_group=False,
                  ):
         super(CM_DepthNet, self).__init__()
         self.fp16_enable=False
@@ -317,10 +315,6 @@ class CM_DepthNet(BaseModule):
             self.use_context_post_ln=use_context_post_ln
             if use_context_post_ln:
                 self.context_post_ln=nn.LayerNorm(context_channels)
-        self.geometry_group=geometry_group
-        
-        if geometry_group:
-            depth_channels=depth_channels*geometry_group
         depth_conv_input_channels = mid_channels
         downsample_net = None
         self.geometry_denoise=geometry_denoise
@@ -382,9 +376,6 @@ class CM_DepthNet(BaseModule):
         self.depth_channels = depth_channels
         self.train_depth_only=train_depth_only
 
-        self.soft_filling_with_offset=soft_filling_with_offset
-    
-        
         self.occlude_tau=occlude_tau
         self.depth2occ_inter=depth2occ_inter
         if depth2occ_inter:
@@ -417,11 +408,7 @@ class CM_DepthNet(BaseModule):
         self.depth_stereo=stereo
         if stereo:
             cost_volumn_channels=depth_channels
-            
-            if geometry_group:
-                cost_volumn_channels=cost_volumn_channels//geometry_group
-            
-            
+
             depth_conv_input_channels += cost_volumn_channels
             downsample_net = nn.Conv2d(depth_conv_input_channels,
                                     mid_channels, 1, 1, 0)
@@ -485,28 +472,10 @@ class CM_DepthNet(BaseModule):
         self.depth_conv = nn.Sequential(*depth_conv_list)
 
         ##########################################
-        if self.soft_filling_with_offset:
-            
-            offset_channel=depth_channels
-            
-            if geometry_group:
-                offset_channel=offset_channel//geometry_group
-            
-            
-            self.offset_conv = nn.Conv2d(
-                    context_channels,
-                    offset_channel*3,
-                    kernel_size=1,
-                    stride=1,
-                    padding=0)
-     
-            constant_init(self.offset_conv, 0)
-
-
+        
         if self.depth2occ_intra:
             occ_channels=self.length
-            if geometry_group:
-                occ_channels=occ_channels*geometry_group
+
             occ_conv_list = [BasicBlock(depth_conv_input_channels, mid_channels,
                                         downsample=downsample_net),
                             BasicBlock(mid_channels, mid_channels),
@@ -679,11 +648,6 @@ class CM_DepthNet(BaseModule):
         else:
             context=None
 
-        ###########
-        if self.soft_filling_with_offset:
-            coor_offsets=self.offset_conv(context)
-            ###################
-     
         depth_se = self.depth_mlp(mlp_input)[..., None, None]
         # depth_se=None
         depth_ = self.depth_se(x, depth_se)
@@ -716,9 +680,6 @@ class CM_DepthNet(BaseModule):
                 depth=depth_feat
 
             occ_weight = self.occ_conv(depth_.clone())
-            if self.geometry_group:
-
-                occ_weight=occ_weight.reshape(occ_weight.shape[0]*self.geometry_group,-1,*occ_weight.shape[2:])
 
             # occ_weight=occ_weight.view(B, N, self.length, H, W)
             occ_weight=(occ_weight/self.occlude_tau).sigmoid()
@@ -739,8 +700,7 @@ class CM_DepthNet(BaseModule):
         
         if not self.train_depth_only:
             context = context.view(B, N,  self.context_channels, H, W)
-        if self.geometry_group:
-            N=N*self.geometry_group
+
         depth = depth.view(B, N, -1, H, W)
         
         
@@ -833,8 +793,7 @@ class CM_DepthNet(BaseModule):
                 output['geometry']=occ_weight
         else:
             output['geometry']=depth
-        if self.soft_filling_with_offset:
-            output['coor_offsets']=coor_offsets
+
         if not self.train_depth_only:
             if self.use_context_post_ln:
                 context=self.context_post_ln(context.permute(0,1,3,4,2)).permute(0,1,4,2,3)

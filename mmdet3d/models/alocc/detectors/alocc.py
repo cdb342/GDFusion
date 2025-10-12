@@ -96,6 +96,8 @@ class ALOCC(CenterPoint):
                 use_mask_net2=False,
                 gts_surroundocc=False,
                 cal_metric_in_model=False,
+                class_freq=None,
+                class_prob=None,
                 ####################
                 # GDFusion voxel-level history fusion
                 not_use_history=False,
@@ -143,28 +145,6 @@ class ALOCC(CenterPoint):
                 ####################
                 # GDFusion geometry history fusion
                 geometry_his_fusion=False,
-                ####################
-                # CausalOcc
-                use_causal_loss=False,
-                causal_loss_temp=1.,
-                causal_loss_weight=0.05,
-                causal_loss_bce_logits=False,
-                causal_loss_non_zero=False,
-                causal_loss_all_class=False,
-                causal_loss_direct=False,
-                causal_loss_class_sample=False,
-                causal_loss_smooth=0.,
-                class_freq=None,
-                class_prob=None,
-                causal_loss_upsample=False,
-                geometry_group=False,
-                learnable_pose=False,
-                normconv=False,
-                pose_weight=1.,
-                pose_wo_bias=False,
-                load_sem_gt=False,
-                pose_add_noise=False,
-                soft_filling_with_offset=False,
                   **kwargs):
         super(ALOCC, self).__init__(**kwargs)
         self.fix_void = fix_void
@@ -262,7 +242,6 @@ class ALOCC(CenterPoint):
      
         self.depth_loss_ce=depth_loss_ce
         self.sem_sup_prototype=sem_sup_prototype
-        self.soft_filling_with_offset=soft_filling_with_offset
         self.use_mask_net2=use_mask_net2
         self.dataset=dataset
        
@@ -463,49 +442,7 @@ class ALOCC(CenterPoint):
         self.count = 0
         
         ##############################################3
-        self.use_causal_loss=use_causal_loss
-        self.causal_loss_temp=causal_loss_temp
-        self.causal_loss_weight=causal_loss_weight
-        self.causal_loss_bce_logits=causal_loss_bce_logits
-        self.causal_loss_non_zero=causal_loss_non_zero
-        self.causal_loss_all_class=causal_loss_all_class
-        self.causal_loss_direct=causal_loss_direct
-        self.causal_loss_class_sample=causal_loss_class_sample
-        self.causal_loss_smooth=causal_loss_smooth
-        self.causal_loss_upsample=causal_loss_upsample
-        
-        self.learnable_pose=learnable_pose
-        self.pose_weight=pose_weight
-        if learnable_pose :
-            pose_input_dim=_dim_
-            self.pose_net=nn.Sequential(
-                    nn.Conv2d(pose_input_dim,
-                            _dim_,
-                            kernel_size=3,
-                            padding=1,
-                            stride=1),
-                    nn.SyncBatchNorm(_dim_),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(_dim_,
-                            _dim_,
-                            kernel_size=3,
-                            padding=1,
-                            stride=1),
-                    nn.SyncBatchNorm(_dim_),
-                    nn.ReLU(inplace=True),
-                    
-                    )
-            self.pose_head=  nn.Sequential(
-                    nn.Linear(_dim_+3*3+3,
-                            _dim_),
-                    nn.ReLU(inplace=True),
-                    nn.Linear(_dim_,3*3+3,bias=not pose_wo_bias),
-                    )
-       
-        self.geometry_group=geometry_group
-        self.normconv=normconv
-        self.load_sem_gt=load_sem_gt
-        self.pose_add_noise=pose_add_noise
+
         self.gts_surroundocc=gts_surroundocc
         self.cal_metric_in_model=cal_metric_in_model
     def with_specific_component(self, component_name):
@@ -1025,12 +962,6 @@ class ALOCC(CenterPoint):
         """Extract features of images."""
         
         return_map = {}
-        
-        if self.pose_add_noise:
-            rot=img[1]
-            tran=img[2]
-            img[1]=img[1]+torch.randn_like(img[1])*self.pose_add_noise
-            img[2]=img[2]+torch.randn_like(img[2])*self.pose_add_noise
         cam_params = img[1:7]
         
         if self.depth_stereo:
@@ -1081,26 +1012,7 @@ class ALOCC(CenterPoint):
             context,_ = self.image_encoder(img[0])
             stereo_metas = None
             depth_occ_volumn=None
-        if  self.learnable_pose:
-             
-            b,n,c,h,w=context.shape
-            context_=context.reshape(b*n,c,h,w)
-            rot=cam_params[0].reshape(b*n,-1)
-            tran=cam_params[1].reshape(b*n,-1)
-            
-            pose=self.pose_net(context_)
-            pose=pose.mean((2,3))
-            pose=self.pose_head(torch.cat((pose,rot,tran),dim=-1))*self.pose_weight
-            
-            rot=rot+pose[:,:3*3]
-            tran=tran+pose[:,3*3:]
-            
-            rot=rot.reshape(b,n,3,3)
-            tran=tran.reshape(b,n,3)
-            cam_params[0]=rot
-            cam_params[1]=tran
         
-            
         return_map['context_before_depth_net']=context
         if not self.depth_stereo and ( self.geometry_his_fusion):
             inputs_=[img[0],*kwargs['aux_cam_params']] if self.training else [img[0],*kwargs['aux_cam_params'][0]]
@@ -1120,8 +1032,6 @@ class ALOCC(CenterPoint):
     
             depth_output = self.depth_net(context, cam_params,stereo_metas,img_metas=img_metas,cost_volumn=depth_occ_volumn,**kwargs)
             context, depth_pred,geometry=depth_output['context'],depth_output['depth_pred'],depth_output['geometry']
-            if self.soft_filling_with_offset:
-                coor_offsets= depth_output['coor_offsets']
 
             return_map['depth'] = depth_pred
             return_map['context'] = context
@@ -1136,16 +1046,8 @@ class ALOCC(CenterPoint):
             context= self.context_net(context, mlp_input)
         
         if self.with_specific_component('view_transformer'):
-            if not self.soft_filling_with_offset:
-                coor_offsets=None
-            
-            if self.load_sem_gt :
-                if self.training:
-                    gt_depth,gt_imgseg=self.depth_net.get_downsampled_gt_depth_semantics(kwargs['gt_depth'],kwargs['gt_semantic_map'])
-                else:
-                    gt_depth,gt_imgseg=self.depth_net.get_downsampled_gt_depth_semantics(kwargs['gt_depth'][0],kwargs['gt_semantic_map'][0])
-                kwargs['gt_imgseg']=gt_imgseg
-                kwargs['gt_depth_disc']=gt_depth
+            coor_offsets=None
+
             bev_feat = self.view_transformer(cam_params, context, geometry,coor_offsets,depth_output=depth_output, **kwargs) 
             
             return_map['cam_params'] = cam_params
@@ -1165,9 +1067,7 @@ class ALOCC(CenterPoint):
             bev_mask = None
 
         if self.with_specific_component('backward_projection'):
-            if self.geometry_group:
-                geometry=geometry.reshape(geometry.shape[0],geometry.shape[1]//self.geometry_group,self.geometry_group,*geometry.shape[2:])
-                geometry=geometry.sum(2)/self.geometry_group
+            
             bev_feat_refined = self.backward_projection([context],
                                         img_metas,
                                         lss_bev=bev_feat.mean(-1),
@@ -1182,8 +1082,6 @@ class ALOCC(CenterPoint):
                 bev_feat = bev_feat_refined
  
         if self.with_specific_component('pre_process'):
-            if self.normconv:
-                bev_feat = (bev_feat,return_map['context_before_depth_net'])
             bev_feat = self.pre_process(bev_feat)[0]
         return_map['bev_feat_before_encoder']=bev_feat
 
@@ -1341,131 +1239,6 @@ class ALOCC(CenterPoint):
             else:
                 loss_depth = self.depth_net.get_depth_loss(kwargs['gt_depth'], results['depth'])
             losses.update(loss_depth)
-        
-        
-
-        if self.use_causal_loss:
-            causal_loss=torch.zeros(1).to(kwargs['gt_occupancy'].device)
-            context=results['context']
-
-            if 'gt_imgseg' not in results:
-                gt_depth,gt_imgseg=self.depth_net.get_downsampled_gt_depth_semantics(kwargs['gt_depth'],kwargs['gt_semantic_map'])
-            else:
-                gt_imgseg=results['gt_imgseg']
-            
-            for i in range(len(kwargs['gt_occupancy'])):
-                gt_occupancy=kwargs['gt_occupancy'][i]
-                ratio = gt_occupancy.shape[0] // results['bev_feat_before_encoder'][i].shape[1]
-                H,W,D=results['bev_feat_before_encoder'][i].shape[1:]
-                if ratio != 1:
-                    if not self.causal_loss_upsample:
-                        
-                        gt_occupancy = gt_occupancy.reshape(H, ratio, W, ratio, D, ratio).permute(0,2,4,1,3,5).reshape( H, W, D, ratio**3)
-                        gt_occupancy = gt_occupancy.reshape(H, ratio, W, ratio, D, ratio).permute(0,2,4,1,3,5).reshape(-1,)
-                        gt_occupancy[gt_occupancy==255]=0
-                        gt_occupancy_onehot=F.one_hot(gt_occupancy.long(),self.num_cls)
-                        gt_occupancy_=gt_occupancy_onehot.reshape( H, W, D, ratio**3,self.num_cls).sum(-2)
-                        empty_mask=gt_occupancy_[...,-1]==ratio**3
-                        visible_mask=gt_occupancy_[...,0]==ratio**3
-                        gt_occupancy_=gt_occupancy_[...,1:-1].argmax(-1)+1
-                        gt_occupancy_[empty_mask]=self.num_cls-1
-                        gt_occupancy_[visible_mask]=255
-                        gt_occupancy=gt_occupancy_
-                labels=gt_occupancy.unique()
-                labels=labels[:-1]
-
-                occ_feat=results['bev_feat_before_encoder'][i]
-                if self.causal_loss_upsample:
-                    
-                    if ratio != 1:
-                        occ_feat=F.interpolate(occ_feat[None,...],scale_factor=ratio,mode='trilinear',align_corners=True,)[0]
-                        occ_feat/=ratio**3
-                    
-                if len(occ_feat.shape)<4:
-                    occ_feat=occ_feat.unsqueeze(-1).repeat(1,1,1,self.dz)
-                
-                occ_feat=occ_feat.sum(0)
-                # occs=[]
-                causal_loss_i=0
-                
-                causal_loss_class_num=1
-                if self.causal_loss_all_class:
-                    causal_loss_class_num=len(labels)
-                for c in range(causal_loss_class_num):
-                    causal_loss_weight_single=1.
-                    if self.causal_loss_all_class:
-                        label_choice=labels[c]  
-                    else:
-                        if self.causal_loss_class_sample:
-                            if self.class_prob is not None:
-                                sampled_idx=torch.multinomial(self.class_prob.to(labels.device)[labels.long()],num_samples=1)
-                            else:
-                                
-                                class_freq=self.class_freq.to(labels.device)[labels.long()]
-                                class_freq=class_freq.log()
-                                class_freq=class_freq/class_freq.sum()
-                                sampled_idx=torch.multinomial(1/(class_freq+self.causal_loss_smooth),num_samples=1)
-                        else:
-                            sampled_idx=torch.randint(0,len(labels),(1,))
-                        label_choice=labels[sampled_idx][0]
-                    mask_cls=gt_occupancy==label_choice
-                    occ_feat_cls=occ_feat[mask_cls]
-                    occ_feat_cls=occ_feat_cls.sum()
-                    causal_grad_map=torch.autograd.grad(outputs=occ_feat_cls,inputs=context,create_graph=True)[0][i]
-                    causal_grad_map=causal_grad_map.mean(1)
-        
-                    if causal_grad_map.max()>1 or causal_grad_map.min()<0:
-                        print(causal_grad_map.max(),causal_grad_map.min(),11111111111111111111111111)
-                        causal_grad_map_=torch.clamp(causal_grad_map,0,1).detach()
-                        causal_grad_map=causal_grad_map_-causal_grad_map.detach()+causal_grad_map
-                                
-                    seg_label=gt_imgseg[i]#.flatten()
-                    seg_valid_mask=seg_label!=255   
-                    causal_grad_map=causal_grad_map[seg_valid_mask]
-                    seg_label=seg_label[seg_valid_mask]
-                    
-                    if self.causal_loss_non_zero:
-                        causal_loss_non_zero_mask=causal_grad_map!=0
-                        if causal_loss_non_zero_mask.sum()==0:
-                            causal_grad_map=causal_grad_map*0.
-                            causal_loss_weight_single=0.
-                        else:
-                            causal_grad_map=causal_grad_map[causal_loss_non_zero_mask]
-                            seg_label=seg_label[causal_loss_non_zero_mask]
-                    
-                    seg_label=(seg_label==label_choice).float()
-                    
-                    if self.causal_loss_bce_logits:
-                        causal_loss_ic=F.binary_cross_entropy_with_logits(causal_grad_map/self.causal_loss_temp,seg_label)*causal_loss_weight_single
-                    elif self.causal_loss_direct:
-                        
-                        positive=seg_label==1
-                        negtive=seg_label==0
-                        causal_loss_positive_mask=causal_grad_map[positive]<1
-                        causal_loss_negtive_mask=causal_grad_map[negtive]>0
-
-                        causal_loss_ic=0
-                        if causal_loss_positive_mask.sum()>0:
-                            causal_loss_ic+=(causal_grad_map[positive][causal_loss_positive_mask]-1).pow(2).mean()
-                        else:
-                            causal_loss_ic+=(causal_grad_map-1).pow(2).mean()*0.
-                        if causal_loss_negtive_mask.sum()>0:
-                            causal_loss_ic+=(causal_grad_map[negtive][causal_loss_negtive_mask]).pow(2).mean()
-                        else:
-                            causal_loss_ic+=(causal_grad_map).pow(2).mean()*0.
-                        causal_loss_ic=causal_loss_ic*causal_loss_weight_single
-                    else:
-                        
-                        causal_loss_ic=F.binary_cross_entropy(causal_grad_map/self.causal_loss_temp,seg_label)*causal_loss_weight_single
-                
-                    if torch.isnan(causal_loss_ic):
-                        causal_loss_ic=torch.zeros_like(causal_loss_ic)
-                    causal_loss_i+=causal_loss_ic
-                if self.causal_loss_all_class:
-                    causal_loss_i=causal_loss_i/len(labels)
-                causal_loss=causal_loss+causal_loss_i
-            causal_loss=causal_loss/len(kwargs['gt_occupancy']) *self.causal_loss_weight
-            losses.update({'causal_loss':causal_loss})
         
         return losses
     

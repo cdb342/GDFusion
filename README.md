@@ -1,44 +1,41 @@
 
-<p align="center" style="margin: 0;">
-  <img src="asset/logo.png" width="40%" style="margin: -50;">
-</p>
+<div id="top" align="center">
+
+# Rethinking Temporal Fusion with a Unified Gradient Descent View for 3D Semantic Occupancy Prediction
+
+[![Project Page](https://img.shields.io/badge/Project-Page-green?style=for-the-badge)](https://cdb342.github.io/GDFusion)
+[![arXiv](https://img.shields.io/badge/arXiv-2504.12959-b31b1b?style=for-the-badge)](https://arxiv.org/abs/2504.12959)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
+
+</div>
 
 <p align="center">
-    <a href="https://opensource.org/licenses/Apache-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
-    <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/Python-3.8+-orange.svg"></a>
-    <a href="https://pytorch.org/"><img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-2.0.1-red.svg"></a>
-    <a href="https://github.com/cdb342/OccStudio/pulls"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+  <img src="assets/framework.png" width="95%" style="border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
+  <br>
+  <em><b>GDFusion</b> introduces a multi-level temporal fusion pipeline, seamlessly integrating voxel, scene, motion, and geometry temporal cues into a unified framework.</em>
 </p>
 
+## 💡 Why GDFusion?
 
-Welcome to **OccStudio**, a unified framework for 3D Occupancy Prediction. This project unifies our previous works, including **ALOcc**, **CausalOcc**, and **GDFusion**, into a single codebase to support research in autonomous driving perception. The framework is designed to handle both **Semantic Occupancy** and **Occupancy Flow** prediction.
+In autonomous driving, understanding the 3D world over time is critical. Yet, most vision-based 3D Occupancy (VisionOcc) methods only scratch the surface of temporal fusion, focusing on simple voxel-level feature aggregation. This leaves a wealth of dynamic information on the table.
 
-Our goal is to provide a flexible and unified tool to accelerate academic research and industry applications. We hope OccStudio can serve as a solid foundation for the community to build upon.
+**GDFusion** changes the game by asking a fundamental question: *What if we could treat temporal fusion as an optimization problem?*
 
-
----
-
-## 🌟 Highlights
-
-- 🏆 **A Unified Framework**: Provides a common codebase for our works (**ALOcc**, **CausalOcc**, **GDFusion**) and other models like `BEVDetOcc`, `FB-Occ`, etc.
-- 🔧 **Flexible and Configurable Architecture**: Supports multiple input modalities (e.g., **images**, **depth**), various types of 3D feature encoding (e.g. **Volume-based**, **BEV-based**), and different temporal fusion methods (e.g., **SoloFusion**, **GDFusion**), all of which are switchable via configuration.
-- 📚 **Dataset Support**: Provides full support for large-scale datasets like **nuScenes** and **Waymo**, and allows for seamlessly switching between different occupancy annotation formats (e.g., **Occ3D**, **SurroundOcc**, **OpenOccupancy**) for robust experimentation.
+We reinterpret the classic RNN update as a **gradient descent step in the feature space**. This powerful new perspective allows us to design a unified framework that elegantly fuses diverse and heterogeneous temporal cues, unlocking new levels of performance and efficiency.
 
 ---
 
-## 🛠 Model Zoo
+## 📦 Model Zoo
 
-OccStudio supports the following state-of-the-art models:
+Our model checkpoints are available on [Hugging Face Hub](https://huggingface.co/Dobbin/OccStudio).
 
-| Method        | Task                      | Publication |
-|---------------|---------------------------|-------------|
-| ALOcc         | Semantic Occupancy & Flow | ICCV 2025   |
-| CausalOcc     | Semantic Occupancy        | ICCV 2025   |
-| GDFusion      | Semantic Occupancy        | CVPR 2025   |
-| BEVDetOcc     | Semantic Occupancy        | -           |
-| FB-Occ        | Semantic Occupancy        | ICCV 2023   |
-| BEVFormer     | Semantic Occupancy        | ECCV 2022   |
-| SparseOcc     | Semantic Occupancy        | ECCV 2023   |
+| Model | Annotation | Backbone | Input | Input Size | mIoU | mIoU_D | IoU | Checkpoint | Config |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| ALOcc-3D-GF | Occ3D | R-50 | C | `256x704` | **46.5** | 40.2 | 77.4 | [🤗 HF](https://huggingface.co/Dobbin/OccStudio/blob/main/alocc_3d_r50_256x704_bevdet_preatrain_gdfusion.pth) | [config](configs/gdfusion/alocc_3d_r50_256x704_bevdet_preatrain_gdfusion.py) |
+| BEVDetOcc-GF | Occ3D | R-50 | C | `256x704` | **43.6** | 36.1 | 77.8 | [🤗 HF](https://huggingface.co/Dobbin/OccStudio/blob/main/bevdetocc_r50_256x704_bevdet_pretrain_gdfusion.pth) | [config](configs/gdfusion/bevdetocc_r50_256x704_bevdet_pretrain_gdfusion.py) |
+| FB-Occ-GF | Occ3D | R-50 | C | `256x704` | **42.1** | 36.4 | 73.3 | [🤗 HF](https://huggingface.co/Dobbin/OccStudio/blob/main/fbocc-r50-cbgs_depth_16f_16x4_20e_gdfusion.pth) | [config](configs/gdfusion/fbocc-r50-cbgs_depth_16f_16x4_20e_gdfusion.py) |
+| ALOcc-3D-GF | Occ3D | R-50 | C+D | `256x704` | **54.9** | 51.4 | 85.9 | [🤗 HF](https://huggingface.co/Dobbin/OccStudio/blob/main/alocc_3d_r50_256x704_bevdet_preatrain_gdfusion.pth) | [config](configs/gdfusion/alocc_3d_r50_256x704_bevdet_preatrain_gdfusion.py) |
+| ALOcc-3D-GF | SurroundOcc | R-50 | C | `900x1600` | **25.5** | 22.5 | 38.2 | [🤗 HF](https://huggingface.co/Dobbin/OccStudio/blob/main/alocc_3d_r50_900x1600_bevdet_preatrain_gdfusion_surroundocc.pth) | [config](configs/gdfusion/alocc_3d_r50_900x1600_bevdet_preatrain_gdfusion_surroundocc.py) |
 
 ---
 
@@ -46,86 +43,72 @@ OccStudio supports the following state-of-the-art models:
 
 ### 1. Installation
 
-We recommend using Conda for environment management.
-
 ```bash
-# Clone this repository (replace OccStudio with your actual repo name)
-git clone https://github.com/cdb342/OccStudio
-cd OccStudio
+# Clone this repository
+git clone https://github.com/cdb342/GDFusion.git
+cd GDFusion
 
 # Create and activate the conda environment
-conda create -n OccStudio python=3.8 -y
-conda activate OccStudio
+conda create -n gdfusion python=3.8 -y
+conda activate gdfusion
 
-# Install PyTorch dependencies (for CUDA 11.8)
-pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 -f https://download.pytorch.org/whl/torch_stable.html
+# Install PyTorch (adjust for your CUDA version if necessary)
+pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --index-url https://download.pytorch.org/whl/cu118
 
-# Install MMCV dependencies
-git clone https://github.com/open-mmlab/mmcv
-cd mmcv
-git checkout 1.x # Use the stable 1.x branch
-MMCV_WITH_OPS=1 pip install -e . -v
-cd ..
-
-# Install MMDetection and MMSegmentation
+# Install crucial MMDetection dependencies
+pip install openmim
+mim install mmcv-full==1.7.0
 pip install mmdet==2.28.2 mmsegmentation==0.30.0
 
-# Install the OccStudio framework itself
+# Install the GDFusion framework and other dependencies
 pip install -v -e .
-
-# Install other dependencies
-pip install torchmetrics timm dcnv4 ninja spconv transformers IPython einops
-pip install numpy==1.23.4 # Pin numpy version for compatibility
+pip install torchmetrics timm dcnv4 ninja spconv transformers IPython einops numpy==1.23.4
 ```
 
-### 2. Data Preparation
+### 3. Data Preparation
 
-#### **nuScenes**
-
-1.  Download the full nuScenes dataset from the [official website](https://www.nuscenes.org/download).
-2.  Download the Occ3D nuScenes annotations from the [project page](https://tsinghua-mars-lab.github.io/Occ3D/).
-3.  (Optional) Download other community annotations for extended experiments:
-    *   [OpenOcc_v2.1 Annotations](https://github.com/OpenDriveLab/OccNet?tab=readme-ov-file#openocc-dataset)
-    *   [OpenOcc_v2.1 Ray Mask](https://drive.google.com/file/d/10jB08Z6MLT3JxkmQfxgPVNq5Fu4lHs_h/view)
-    *   [SurroundOcc Annotations](https://github.com/weiyithu/SurroundOcc) (rename to `gts_surroundocc`)
-    *   [OpenOccupancy-v0.1 Annotations](https://github.com/JeffWang987/OpenOccupancy)
-
-Please organize the data into the following directory structure:
+Organize your `data` directory as follows. The Occ3D annotations are required, while others are optional for extended research.
 
 ```
-├── data
-│   ├── nuscenes
-│   │   ├── maps, samples, sweeps, v1.0-test, v1.0-trainval
-│   │   ├── gts                 # Occ3D annotations
-│   │   ├── gts_surroundocc     # (Optional) SurroundOcc annotations
-│   │   ├── openocc_v2          # (Optional) OpenOcc annotations
-│   │   ├── openocc_v2_ray_mask # (Optional) OpenOcc ray mask
-│   │   └── nuScenes-Occupancy-v0.1 # (Optional) OpenOccupancy annotations
+GDFusion/
+└── data/
+    └── nuscenes/
+        ├── maps
+        ├── samples
+        ├── sweeps
+        ├── v1.0-test
+        ├── v1.0-trainval
+        ├── gts                 # Required: Occ3D annotations
+        └── ...                 # Optional annotations
 ```
 
+<details>
+<summary><b>Click to see details on downloading and placing all annotation sets</b></summary>
 
-Finally, run the preprocessing scripts:
+1.  **nuScenes Dataset**: Download from the [official website](https://www.nuscenes.org/download).
+2.  **Occ3D Annotations**: Download from the [project page](https://tsinghua-mars-lab.github.io/Occ3D/) and place in `gts`.
+3.  **(Optional) Other Annotations**:
+    *   [OpenOcc_v2.1](https://github.com/OpenDriveLab/OccNet?tab=readme-ov-file#openocc-dataset) -> `openocc_v2`
+    *   [OpenOcc_v2.1 Ray Mask](https://drive.google.com/file/d/10jB08Z6MLT3JxkmQfxgPVNq5Fu4lHs_h/view) -> `openocc_v2_ray_mask`
+    *   [SurroundOcc](https://github.com/weiyithu/SurroundOcc) -> `gts_surroundocc`
+    *   [OpenOccupancy-v0.1](https://github.com/JeffWang987/OpenOccupancy) -> `nuScenes-Occupancy-v0.1`
 
+</details>
+
+Finally, run the preprocessing scripts to prepare the data for training:
 
 ```bash
-# Prepare LiDAR segmentation labels
+# Prepare LiDAR segmentation labels for supervision
 python tools/nusc_process/extract_sem_point.py
 
-# Create formatted data for training
+# Create formatted data info files
 python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 python tools/create_data_bevdet.py
 ```
 
-#### **Waymo**
+### 4. Pre-trained Backbones
 
-1. Download the Waymo Open Dataset from the [official website](https://waymo.com/open/download/).
-2. Download the Occ3D Waymo annotations and pkl files from [here](https://github.com/Tsinghua-MARS-Lab/CVT-Occ/blob/main/docs/dataset.md).
-3. Follow the official instructions to organize the files.
-
-### 3. Pre-trained Models
-
-For training, please download pre-trained image backbones from [BEVDet GitHub](https://github.com/HuangJunJie2017/BEVDet), [GeoMIM GitHub](https://github.com/Sense-X/GeoMIM), or [Hugging Face Hub](https://huggingface.co/Dobbin/alocc). Place them in the `ckpts/pretrain/` directory.
-
+For training, please download pre-trained image backbones from [BEVDet](https://github.com/HuangJunJie2017/BEVDet), [GeoMIM](https://github.com/Sense-X/GeoMIM), or our [Hugging Face Hub](https://huggingface.co/Dobbin/OccStudio). Place the checkpoint files in the `ckpts/pretrain/` directory.
 
 ---
 
@@ -133,98 +116,53 @@ For training, please download pre-trained image backbones from [BEVDet GitHub](h
 
 ### Training
 
-Use the following script for distributed training.
+Use our convenient script for distributed training on multiple GPUs.
 
 ```bash
 # Syntax: bash tools/dist_train.sh [CONFIG_FILE] [WORK_DIR] [NUM_GPUS]
-# Example: Train the ALOcc-3D model
-bash tools/dist_train.sh configs/alocc/alocc_3d_256x704_bevdet_preatrain.py work_dir/alocc_3d 8
+
+# Example: Train the ALOcc-3D-GDFusion model 
+bash tools/dist_train.sh configs/gdfusion/alocc_3d_r50_256x704_bevdet_preatrain_gdfusion.py work_dirs/alocc3d_gdfusion 8
 ```
 
-### Testing
+### Testing & Evaluation
 
-Download our pre-trained models from [Hugging Face](https://huggingface.co/Dobbin/alocc) and run the testing script.
+Download a pre-trained model from our [Model Zoo](#-model-zoo) and evaluate its performance.
 
 ```bash
-# Evaluate semantic occupancy (mIoU) or occupancy flow
 # Syntax: bash tools/dist_test.sh [CONFIG_FILE] [CHECKPOINT_PATH] [NUM_GPUS]
-# Example: Evaluate the ALOcc-3D model
-bash tools/dist_test.sh configs/alocc/alocc_3d_256x704_bevdet_preatrain.py ckpts/alocc_3d_256x704_bevdet_preatrain.pth 8
 
-# Evaluate semantic occupancy (RayIoU)
-# Syntax: bash tools/dist_test_ray.sh [CONFIG_FILE] [CHECKPOINT_PATH] [NUM_GPUS]
-# Example: Evaluate the ALOcc-3D model
-bash tools/dist_test.sh configs/alocc/alocc_3d_256x704_bevdet_preatrain_wo_mask.py ckpts/alocc_3d_256x704_bevdet_preatrain_wo_mask.pth 8
+# Example: Evaluate the ALOcc-3D-GDFusion model
+bash tools/dist_test.sh configs/gdfusion/alocc_3d_r50_256x704_bevdet_preatrain_gdfusion.py ckpts/alocc_3d_gdfusion.pth 8
 ```
 
-> **Note:** When performing inference with temporal fusion, please use **1 or 8 GPUs**. A sampler bug may cause duplicate sample counting with other GPU configurations.
+> **⚠️ Important**: For temporal fusion inference, please use **1 or 8 GPUs** only. Using other GPU numbers might lead to incorrect results due to a sampler bug causing sample duplication.
 
 ### Benchmarking
 
-We provide convenient tools to benchmark model FPS (Frames Per Second) and FLOPs.
+We provide tools to easily benchmark model speed and computational cost.
 
 ```bash
-# Benchmark FPS
-# Syntax: python tools/analysis_tools/benchmark.py [CONFIG_FILE]
-# Example: Benchmark the ALOcc-3D model
-python tools/analysis_tools/benchmark.py configs/alocc/alocc_3d_256x704_bevdet_preatrain.py
+# Benchmark FPS (Frames Per Second)
+python tools/analysis_tools/benchmark.py configs/gdfusion/your_config.py
 
 # Calculate FLOPs
-# Syntax: python tools/analysis_tools/get_flops.py [CONFIG_FILE] --modality image --shape 256 704
-# Example: Calculate FLOPs for the ALOcc-3D model
-python tools/analysis_tools/get_flops.py configs/alocc/alocc_3d_256x704_bevdet_preatrain.py --modality image --shape 256 704
+python tools/analysis_tools/get_flops.py configs/gdfusion/your_config.py --shape 256 704
 ```
 
----
-
-## 📊 Main Results
-
-Here are the performance benchmarks of models implemented in **OccStudio**. The results below are for the `ALOcc` series.
-
-#### Performance on Occ3D-nuScenes (trained with camera visible mask)
-| Model           | Backbone  | Input Size | mIoU<sub>D</sub><sup>m</sup> | mIoU<sup>m</sup> | FPS  |
-|:----------------|:---------:|:----------:|:----------:|:----------:|:----:|
-| **ALOcc-2D-mini** | ResNet-50 | 256 × 704  | 35.4       | 41.4       | 30.5 |
-| **ALOcc-2D**      | ResNet-50 | 256 × 704  | 38.7       | 44.8       | 8.2  |
-| **ALOcc-3D**      | ResNet-50 | 256 × 704  | 39.3       | 45.5       | 6.0  |
-
-#### Performance on Occ3D-nuScenes (trained w/o camera visible mask)
-| Method          | Backbone  | Input Size | mIoU | RayIoU | RayIoU<sub>1m, 2m, 4m</sub> | FPS  |
-|:----------------|:---------:|:----------:|:----:|:------:|:-----------------:|:----:|
-| **ALOcc-2D-mini** | ResNet-50 | 256 × 704  | 33.4 | 39.3   | 32.9, 40.1, 44.8  | 30.5 |
-| **ALOcc-2D**      | ResNet-50 | 256 × 704  | 37.4 | 43.0   | 37.1, 43.8, 48.2  | 8.2  |
-| **ALOcc-3D**      | ResNet-50 | 256 × 704  | 38.0 | 43.7   | 37.8, 44.7, 48.8  | 6.0  |
-
-#### Performance on OpenOcc (Semantic Occupancy and Flow)
-| Method            | Backbone  | Input Size | Occ Score | mAVE  | mAVE<sub>TP</sub> | RayIoU | RayIoU<sub>1m, 2m, 4m</sub> |
-|:------------------|:---------:|:----------:|:---------:|:-----:|:-----------:|:------:|:-----------------:|
-| **ALOcc-Flow-2D**   | ResNet-50 | 256 × 704  | 42.1      | 0.537 | 0.427       | 40.5   | 34.3, 41.3, 45.8  |
-| **ALOcc-Flow-3D**   | ResNet-50 | 256 × 704  | 43.0      | 0.556 | 0.481       | 41.9   | 35.6, 42.8, 47.4  |
-
 
 ---
 
-## 🤝 Contribution
+## 🙏 Acknowledgements
 
-We welcome contributions from the community! If you find a bug, have a feature request, or want to contribute new models to OccStudio, please feel free to open an issue or submit a pull request.
-
----
-
-## 🙏 Acknowledgement
-
-We gratefully acknowledge the foundational work of many excellent open-source projects, and we would like to extend our special thanks to:
-
-- [open-mmlab](https://github.com/open-mmlab)
-- [BEVDet](https://github.com/HuangJunJie2017/BEVDet)
-- [FB-Occ](https://github.com/NVlabs/FB-BEV)
-- [FlashOcc](https://github.com/Yzichen/FlashOCC)
-- [Occ3D](https://github.com/Tsinghua-MARS-Lab/Occ3D)
+Our work is built upon the shoulders of giants. We gratefully acknowledge the excellent research and open-source code from:
+[open-mmlab](https://github.com/open-mmlab), [BEVDet](https://github.com/HuangJunjie2017/BEVDet), [FB-Occ](https://github.com/NVlabs/FB-BEV), [FlashOcc](https://github.com/Yzichen/FlashOCC), and [Occ3D](https://github.com/Tsinghua-MARS-Lab/Occ3D).
 
 ---
 
 ## 📜 Citation
 
-If you find OccStudio useful in your research, please consider citing our relevant papers:
+If you find GDFusion useful in your work, please cite our paper:
 
 ```bibtex
 @InProceedings{chen2025rethinking,
@@ -232,33 +170,8 @@ If you find OccStudio useful in your research, please consider citing our releva
     title     = {Rethinking Temporal Fusion with a Unified Gradient Descent View for 3D Semantic Occupancy Prediction},
     booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
     month     = {June},
-    year      = {2025},
-    pages     = {1505-1515}
-}
-
-@InProceedings{chen2025alocc,
-    author    = {Chen, Dubing and Fang, Jin and Han, Wencheng and Cheng, Xinjing and Yin, Junbo and Xu, Chenzhong and Khan, Fahad Shahbaz and Shen, Jianbing},
-    title     = {Alocc: adaptive lifting-based 3d semantic occupancy and cost volume-based flow prediction},
-    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-    month     = {October},
-    year      = {2025},
-}
-
-@InProceedings{chen2025semantic,
-    author    = {Chen, Dubing and Zheng, Huan and Zhou, Yucheng and Li, Xianfei and Liao, Wenlong and He, Tao and Peng, Pai and Shen, Jianbing},
-    title     = {Semantic Causality-Aware Vision-Based 3D Occupancy Prediction},
-    booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-    month     = {October},
-    year      = {2025},
+    year      = {2025}
 }
 ```
 
-
-
-
-
-
-
-
-
-
+<p align="right"><a href="#top">🔼 Back to Top</a></p>
