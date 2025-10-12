@@ -65,7 +65,7 @@ pip install -v -e .
 pip install torchmetrics timm dcnv4 ninja spconv transformers IPython einops numpy==1.23.4
 ```
 
-### 3. Data Preparation
+### 2. Data Preparation
 
 Organize your `data` directory as follows. The Occ3D annotations are required, while others are optional for extended research.
 
@@ -106,7 +106,7 @@ python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./dat
 python tools/create_data_bevdet.py
 ```
 
-### 4. Pre-trained Backbones
+### 3. Pre-trained Backbones
 
 For training, please download pre-trained image backbones from [BEVDet](https://github.com/HuangJunJie2017/BEVDet), [GeoMIM](https://github.com/Sense-X/GeoMIM), or our [Hugging Face Hub](https://huggingface.co/Dobbin/OccStudio). Place the checkpoint files in the `ckpts/pretrain/` directory.
 
