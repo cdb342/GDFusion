@@ -148,7 +148,6 @@ use_camera_visible_mask=True
 depth_gt=True
 geometry_his_fusion_with_gt=True
 
-torch_sparse_coor=True
 model = dict(
     type='ALOCC',
     use_depth_supervision=use_depth_supervision,
@@ -235,7 +234,6 @@ model = dict(
         input_size=data_config['input_size'],
         soft_filling=soft_filling,
         depth2occ_inter=depth2occ_inter,
-        torch_sparse_coor=torch_sparse_coor,
         downsample=16),
     pre_process=dict(
         type='CustomResNet3D',
