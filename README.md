@@ -1,3 +1,13 @@
+# 📢 Announcement: GDFusion is now integrated into OccStudio!
+
+**GDFusion has been merged into [OccStudio](https://github.com/cdb342/OccStudio).** 
+
+This repository serves as the **official archive** for the original CVPR 2025 paper implementation. 
+For the latest updates, bug fixes, and a more unified framework supporting multiple models, we highly recommend using **OccStudio**.
+
+👉 **Check out the new framework:** [https://github.com/cdb342/OccStudio](https://github.com/cdb342/OccStudio)
+
+---
 
 <div id="top" align="center">
 
